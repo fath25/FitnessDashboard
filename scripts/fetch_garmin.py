@@ -7,6 +7,15 @@ Setup:
     export GARMIN_EMAIL="your@email.com"
     export GARMIN_PASSWORD="yourPassword"
 
+Token storage:
+    On first run the script asks for your MFA code and saves the session token
+    to .garmin_tokens.json next to this script.  Subsequent runs load the token
+    automatically — no credentials or MFA needed.
+
+    For GitHub Actions, copy the contents of .garmin_tokens.json into a secret
+    called GARMINTOKENS and add it to the workflow env.  The raw JSON string is
+    accepted directly by the library.
+
 Usage:
     python3 fetch_garmin.py              # last 7 days
     python3 fetch_garmin.py --days 30    # last 30 days
@@ -23,7 +32,12 @@ from pathlib import Path
 from typing import Optional
 
 try:
-    from garminconnect import Garmin, GarminConnectAuthenticationError
+    from garminconnect import (
+        Garmin,
+        GarminConnectAuthenticationError,
+        GarminConnectConnectionError,
+        GarminConnectTooManyRequestsError,
+    )
 except ImportError:
     print("Error: garminconnect not installed.")
     print("Please run: pip install garminconnect")
@@ -36,6 +50,10 @@ except ImportError:
 BASE_DIR    = Path(__file__).parent
 IMPORTS_DIR = BASE_DIR / "imports"
 STATE_FILE  = BASE_DIR / ".garmin_sync_state.json"
+
+# Where session tokens are persisted between runs.
+# Override with env var GARMINTOKENS_PATH or GARMINTOKENS (raw JSON for CI).
+TOKEN_FILE = BASE_DIR / ".garmin_tokens.json"
 
 # Activity types to skip (manually tracked)
 SKIP_TYPES = {"other"}
@@ -125,32 +143,89 @@ def extract_fit_from_zip(zip_bytes: bytes) -> Optional[bytes]:
         pass
     return None
 
+
+def prompt_mfa() -> str:
+    """Called by garminconnect when a 2FA code is required."""
+    print()
+    print("Garmin Connect requires two-factor authentication.")
+    code = input("Enter the MFA / 2FA code from your authenticator app: ").strip()
+    return code
+
+# ---------------------------------------------------------------------------
+# Login with token caching
+# ---------------------------------------------------------------------------
+
+def garmin_login() -> Garmin:
+    """
+    Authenticate with Garmin Connect.
+
+    Priority:
+      1. GARMINTOKENS env var — raw JSON string (used in GitHub Actions).
+      2. TOKEN_FILE on disk (.garmin_tokens.json) — reused from a previous run.
+      3. GARMIN_EMAIL + GARMIN_PASSWORD — full login; MFA prompted interactively.
+         On success the token is saved to TOKEN_FILE for future runs.
+    """
+    # --- Option 1: raw token JSON from environment (CI / GitHub Actions) ---
+    token_json = os.environ.get("GARMINTOKENS")
+    if token_json:
+        print("Using token from GARMINTOKENS environment variable...")
+        try:
+            api = Garmin()
+            api.login(tokenstore=token_json)
+            print("Login successful (token from env).")
+            return api
+        except Exception as e:
+            print(f"Token from env failed ({e}), falling back to credentials...")
+
+    # --- Option 2: token file saved from a previous run ---
+    token_path = str(os.environ.get("GARMINTOKENS_PATH", TOKEN_FILE))
+    if Path(token_path).exists():
+        print(f"Loading saved token from {token_path}...")
+        try:
+            email    = os.environ.get("GARMIN_EMAIL", "")
+            password = os.environ.get("GARMIN_PASSWORD", "")
+            api = Garmin(email, password, prompt_mfa=prompt_mfa)
+            api.login(tokenstore=token_path)
+            print("Login successful (saved token).")
+            return api
+        except Exception as e:
+            print(f"Saved token failed ({e}), re-authenticating with credentials...")
+
+    # --- Option 3: full credential login ---
+    email    = os.environ.get("GARMIN_EMAIL")
+    password = os.environ.get("GARMIN_PASSWORD")
+    if not email or not password:
+        print("Error: no saved token found and credentials are missing.")
+        print("  export GARMIN_EMAIL='your@email.com'")
+        print("  export GARMIN_PASSWORD='yourPassword'")
+        print(f"  Or place a token file at: {TOKEN_FILE}")
+        sys.exit(1)
+
+    print("Connecting to Garmin Connect (full login)...")
+    try:
+        api = Garmin(email, password, prompt_mfa=prompt_mfa)
+        api.login(tokenstore=token_path)
+        print(f"Login successful. Token saved to {token_path}")
+        return api
+    except GarminConnectAuthenticationError:
+        print("Error: login failed — check email/password or MFA code.")
+        sys.exit(1)
+    except GarminConnectTooManyRequestsError:
+        print("Error: too many login attempts. Wait a few minutes and try again.")
+        sys.exit(1)
+    except GarminConnectConnectionError as e:
+        print(f"Connection error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected login error: {e}")
+        sys.exit(1)
+
 # ---------------------------------------------------------------------------
 # Main logic
 # ---------------------------------------------------------------------------
 
 def sync(days: int = 7, sync_all: bool = False):
-    email    = os.environ.get("GARMIN_EMAIL")
-    password = os.environ.get("GARMIN_PASSWORD")
-
-    if not email or not password:
-        print("Error: environment variables missing.")
-        print("  export GARMIN_EMAIL='your@email.com'")
-        print("  export GARMIN_PASSWORD='yourPassword'")
-        sys.exit(1)
-
-    print("Connecting to Garmin Connect...")
-    try:
-        api = Garmin(email, password)
-        api.login()
-    except GarminConnectAuthenticationError:
-        print("Error: login failed — check email or password.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Login error: {e}")
-        sys.exit(1)
-
-    print("Login successful.")
+    api = garmin_login()
 
     state = load_state()
     already_downloaded = set(str(i) for i in state.get("downloaded_ids", []))
