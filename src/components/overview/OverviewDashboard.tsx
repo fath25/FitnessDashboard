@@ -86,13 +86,14 @@ export function OverviewDashboard() {
           <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-rose-500/5" />
           <div className="relative flex items-center justify-between gap-4">
             <div>
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-0.5 inline-flex items-center gap-1 whitespace-nowrap">
-                <span>Next time together Schatzi (</span>
-                <Heart className="text-rose-400" size={12} />
-                <span>BARA</span>
-                <Heart className="text-rose-400" size={12} />
-                <span>)</span>
-              </div>
+            <div className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">
+            <div>Next time together Schatzi</div>
+            <div className="inline-flex items-center gap-1">
+              <Heart className="text-rose-400" size={12} />
+              <span>BARA</span>
+              <Heart className="text-rose-400" size={12} />
+            </div>
+          </div>
               <div className="text-white font-semibold">
                 {GF_DATE.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
