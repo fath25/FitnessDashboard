@@ -5,7 +5,7 @@ import { StatCard } from '@/components/shared/StatCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { SportBadge } from '@/components/shared/SportBadge'
 import { SPORT_CONFIG } from '@/constants/sports'
-import { RACE_DATE } from '@/constants/race'
+import { RACE_DATE, GF_DATE } from '@/constants/race'
 import { PHASE_LABELS } from '@/types/training'
 import {
   formatDistance, formatDurationHM, formatPace, formatShortDate, daysUntil,
@@ -20,6 +20,7 @@ export function OverviewDashboard() {
   const { activities, strengthSessions, isLoading } = useFitness()
   const plan = useTrainingPlan(activities)
   const daysLeft = daysUntil(RACE_DATE)
+  const daysToGf = daysUntil(GF_DATE)
   const curWeek = currentPlanWeek()
   const currentWeekPlan = plan[curWeek - 1]
 
@@ -78,6 +79,25 @@ export function OverviewDashboard() {
           </div>
         </div>
       </div>
+
+      {/* GF countdown */}
+      {daysToGf >= 0 && (
+        <div className="bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-2xl p-4 border border-slate-700/50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-rose-500/5" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Next time together</div>
+              <div className="text-white font-semibold">
+                {GF_DATE.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+            </div>
+            <div className="text-center shrink-0">
+              <div className="text-4xl font-black font-mono text-pink-300">{daysToGf}</div>
+              <div className="text-xs text-slate-400 mt-0.5">days to go</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 7-day stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
