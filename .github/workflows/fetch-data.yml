@@ -3,7 +3,7 @@ name: Fetch Garmin Data
 on:
   schedule:
     - cron: '0 6 * * *'   # 06:00 UTC daily
-  workflow_dispatch:       # Allow manual trigger
+  workflow_dispatch:       # Allow manual trigger from Actions tab
 
 jobs:
   fetch:
@@ -26,9 +26,8 @@ jobs:
 
       - name: Fetch Garmin data
         env:
-          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
-          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
-        run: python scripts/fetch_garmin.py
+          GARMINTOKENS: ${{ secrets.GARMINTOKENS }}
+        run: python scripts/fetch_garmin.py --days 365 --stats-days 60
 
       - name: Commit updated data
         run: |
