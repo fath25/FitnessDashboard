@@ -4,7 +4,7 @@ export const TOTAL_PLAN_WEEKS = 25   // Week 25 Mon=Sep 29 → Sun=Oct 5 (race d
 
 // ── Personal countdown ────────────────────────────────────────────────────
 // Change this date to whenever you next see your girlfriend.
-export const GF_DATE = new Date('2026-05-09T00:00:00')
+export const GF_DATE = new Date('2026-05-21T00:00:00')
 
 export const OLYMPIC_DISTANCES = {
   swimMeters: 1500,
