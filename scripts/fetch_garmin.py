@@ -1,279 +1,245 @@
 #!/usr/bin/env python3
 """
-Fetch Garmin Connect data and write JSON files to public/data/.
+fetch_garmin.py — syncs Garmin Connect activities as FIT files into imports/
 
-Required environment variables:
-  GARMIN_EMAIL      — your Garmin Connect email
-  GARMIN_PASSWORD   — your Garmin Connect password
+Setup:
+    pip install garminconnect
+    export GARMIN_EMAIL="your@email.com"
+    export GARMIN_PASSWORD="yourPassword"
 
-Outputs:
-  public/data/activities.json
-  public/data/daily_stats.json
+Usage:
+    python3 fetch_garmin.py              # last 7 days
+    python3 fetch_garmin.py --days 30    # last 30 days
+    python3 fetch_garmin.py --all        # all not yet synced
 """
-
-import json
 import os
+import json
 import sys
-from datetime import date, timedelta
+import argparse
+import zipfile
+import io
+from datetime import datetime, date, timedelta
 from pathlib import Path
+from typing import Optional
 
-import garth
+try:
+    from garminconnect import Garmin, GarminConnectAuthenticationError
+except ImportError:
+    print("Error: garminconnect not installed.")
+    print("Please run: pip install garminconnect")
+    sys.exit(1)
 
-# ─── Config ───────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
-REPO_ROOT = Path(__file__).parent.parent
-DATA_DIR = REPO_ROOT / "public" / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+BASE_DIR    = Path(__file__).parent
+IMPORTS_DIR = BASE_DIR / "imports"
+STATE_FILE  = BASE_DIR / ".garmin_sync_state.json"
 
-ACTIVITIES_FILE = DATA_DIR / "activities.json"
-DAILY_STATS_FILE = DATA_DIR / "daily_stats.json"
+# Activity types to skip (manually tracked)
+SKIP_TYPES = {"other"}
 
-FETCH_DAYS = 180  # fetch last 6 months of activities
-
-SPORT_MAP: dict[str, str] = {
-    "running": "running",
-    "trail_running": "running",
-    "treadmill_running": "running",
-    "cycling": "cycling",
-    "road_biking": "cycling",
-    "mountain_biking": "cycling",
-    "indoor_cycling": "cycling",
-    "virtual_ride": "cycling",
-    "swimming": "swimming",
+# Garmin activity type → subfolder under imports/
+ACTIVITY_FOLDER_MAP = {
+    "running":             "running",
+    "trail_running":       "running",
+    "treadmill_running":   "running",
+    "indoor_running":      "running",
+    "swimming":            "swimming",
+    "lap_swimming":        "swimming",
     "open_water_swimming": "swimming",
-    "pool_swimming": "swimming",
-    "strength_training": "strength",
-    "fitness_equipment": "strength",
-    "gym": "strength",
+    "cycling":             "cycling",
+    "road_biking":         "cycling",
+    "indoor_cycling":      "cycling",
+    "strength_training":   "strength",
+    "fitness_equipment":   "strength",
+    "indoor_rowing":       "strength",
+    "weight_training":     "strength",
+}
+DEFAULT_FOLDER = "other"
+
+# Activity type → short label for filename
+ACTIVITY_LABEL_MAP = {
+    "running":             "run",
+    "trail_running":       "trail",
+    "treadmill_running":   "treadmill",
+    "indoor_running":      "run-indoor",
+    "swimming":            "swim",
+    "lap_swimming":        "swim",
+    "open_water_swimming": "swim-ow",
+    "cycling":             "ride",
+    "road_biking":         "ride",
+    "indoor_cycling":      "ride-indoor",
+    "strength_training":   "strength",
+    "fitness_equipment":   "strength",
+    "indoor_rowing":       "row",
+    "weight_training":     "strength",
 }
 
-# ─── Auth ─────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
 
-def login() -> None:
-    email = os.environ.get("GARMIN_EMAIL")
-    password = os.environ.get("GARMIN_PASSWORD")
-    if not email or not password:
-        sys.exit("ERROR: GARMIN_EMAIL and GARMIN_PASSWORD environment variables are required.")
-    garth.login(email, password)
-    print("✓ Logged in to Garmin Connect")
+def load_state() -> dict:
+    """Load sync state (already downloaded activity IDs)."""
+    if STATE_FILE.exists():
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    return {"downloaded_ids": []}
 
 
-# ─── Activities ───────────────────────────────────────────────────────────────
+def save_state(state: dict):
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
 
-def fetch_activities() -> list[dict]:
-    end = date.today()
-    start = end - timedelta(days=FETCH_DAYS)
 
-    params = {
-        "startDate": str(start),
-        "endDate": str(end),
-        "start": 0,
-        "limit": 500,
-    }
+def get_folder(activity_type: str) -> Path:
+    folder_name = ACTIVITY_FOLDER_MAP.get(activity_type.lower(), DEFAULT_FOLDER)
+    folder = IMPORTS_DIR / folder_name
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
 
+
+def get_label(activity_type: str) -> str:
+    return ACTIVITY_LABEL_MAP.get(activity_type.lower(), activity_type.lower().replace(" ", "-"))
+
+
+def build_filename(activity: dict) -> str:
+    """Build filename in the format YYYY-MM-DD_type_ID.fit"""
+    raw_date = activity.get("startTimeLocal", "")[:10]
+    activity_type = activity.get("activityType", {}).get("typeKey", "activity")
+    label = get_label(activity_type)
+    activity_id = activity.get("activityId", "unknown")
+    return f"{raw_date}_{label}_{activity_id}.fit"
+
+
+def extract_fit_from_zip(zip_bytes: bytes) -> Optional[bytes]:
+    """Extract the .fit file from a Garmin ZIP download."""
     try:
-        raw = garth.connectapi(
-            "/activitylist-service/activities/search/activities",
-            params=params,
-        )
-    except Exception as e:
-        print(f"WARNING: Could not fetch activities: {e}")
-        return []
-
-    if not isinstance(raw, list):
-        print(f"WARNING: Unexpected activities response type: {type(raw)}")
-        return []
-
-    print(f"✓ Fetched {len(raw)} raw activities")
-    return raw
-
-
-def map_sport(type_key: str) -> str:
-    return SPORT_MAP.get(type_key.lower(), "other")
-
-
-def detect_bricks(activities: list[dict]) -> None:
-    """Tag paired cycling+running activities on the same day as bricks."""
-    from collections import defaultdict
-    by_day: dict[str, list[dict]] = defaultdict(list)
-    for a in activities:
-        day = a.get("startTime", "")[:10]
-        by_day[day].append(a)
-
-    for day_acts in by_day.values():
-        bikes = [a for a in day_acts if a["sport"] == "cycling"]
-        runs = [a for a in day_acts if a["sport"] == "running"]
-        for bike in bikes:
-            for run in runs:
-                bike_end_ts = bike.get("_endEpoch", 0)
-                run_start_ts = run.get("_startEpoch", 0)
-                gap_min = (run_start_ts - bike_end_ts) / 60
-                if 0 <= gap_min <= 90:
-                    group_id = f"brick-{day_acts[0]['startTime'][:10]}"
-                    bike["brickGroupId"] = group_id
-                    run["brickGroupId"] = group_id
-                    bike["sport"] = "brick"
-                    run["sport"] = "brick"
-
-
-def parse_activity(raw: dict) -> dict | None:
-    type_key = (raw.get("activityType") or {}).get("typeKey", "")
-    sport = map_sport(type_key)
-    if sport == "other":
-        return None  # skip unsupported activities
-
-    start_time = raw.get("startTimeLocal") or raw.get("startTimeGMT", "")
-    duration = raw.get("duration", 0) or 0
-    distance = raw.get("distance", 0) or 0
-
-    # Pace: Garmin returns m/s for speed
-    avg_speed_ms = raw.get("averageSpeed") or 0
-    avg_pace_sec_per_km = None
-    avg_speed_kmh = None
-    if avg_speed_ms > 0:
-        avg_speed_kmh = avg_speed_ms * 3.6
-        if sport in ("running", "swimming"):
-            avg_pace_sec_per_km = 1000 / avg_speed_ms
-
-    # Epoch times for brick detection
-    import time as _time
-    from datetime import datetime as _dt
-    try:
-        start_epoch = _dt.fromisoformat(start_time.replace(" ", "T")).timestamp()
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+            for name in zf.namelist():
+                if name.lower().endswith(".fit"):
+                    return zf.read(name)
     except Exception:
-        start_epoch = 0
+        pass
+    return None
 
-    activity = {
-        "id": str(raw.get("activityId", "")),
-        "sport": sport,
-        "startTime": start_time.replace(" ", "T"),
-        "durationSeconds": round(duration),
-        "distanceMeters": round(distance),
-        "avgHeartRate": raw.get("averageHR"),
-        "maxHeartRate": raw.get("maxHR"),
-        "avgPaceSecPerKm": round(avg_pace_sec_per_km, 1) if avg_pace_sec_per_km else None,
-        "avgSpeedKmh": round(avg_speed_kmh, 1) if avg_speed_kmh else None,
-        "avgPowerWatts": raw.get("avgPower"),
-        "avgCadence": raw.get("averageRunningCadenceInStepsPerMinute")
-            or raw.get("averageBikingCadenceInRevPerMinute"),
-        "elevationGainMeters": raw.get("elevationGain"),
-        "vo2maxEstimate": raw.get("vO2MaxValue"),
-        "trainingEffect": raw.get("aerobicTrainingEffect"),
-        "calories": raw.get("calories"),
-        "laps": [],
-        "name": raw.get("activityName", ""),
-        "notes": None,
-        "brickGroupId": None,
-        "_startEpoch": start_epoch,
-        "_endEpoch": start_epoch + duration,
-    }
-    return activity
+# ---------------------------------------------------------------------------
+# Main logic
+# ---------------------------------------------------------------------------
 
+def sync(days: int = 7, sync_all: bool = False):
+    email    = os.environ.get("GARMIN_EMAIL")
+    password = os.environ.get("GARMIN_PASSWORD")
 
-def build_activities_json(raw_list: list[dict]) -> dict:
-    from datetime import datetime as _dt
-    activities = []
-    for raw in raw_list:
-        parsed = parse_activity(raw)
-        if parsed:
-            activities.append(parsed)
+    if not email or not password:
+        print("Error: environment variables missing.")
+        print("  export GARMIN_EMAIL='your@email.com'")
+        print("  export GARMIN_PASSWORD='yourPassword'")
+        sys.exit(1)
 
-    detect_bricks(activities)
+    print("Connecting to Garmin Connect...")
+    try:
+        api = Garmin(email, password)
+        api.login()
+    except GarminConnectAuthenticationError:
+        print("Error: login failed — check email or password.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Login error: {e}")
+        sys.exit(1)
 
-    # Remove internal epoch fields before saving
-    for a in activities:
-        a.pop("_startEpoch", None)
-        a.pop("_endEpoch", None)
+    print("Login successful.")
 
-    activities.sort(key=lambda a: a["startTime"], reverse=True)
-    return {"fetchedAt": _dt.utcnow().isoformat() + "Z", "activities": activities}
+    state = load_state()
+    already_downloaded = set(str(i) for i in state.get("downloaded_ids", []))
 
+    # Fetch activity list
+    limit = 100 if sync_all else min(days * 2, 50)
+    print(f"Fetching activity list (max {limit})...")
+    activities = api.get_activities(0, limit)
 
-# ─── Daily stats ──────────────────────────────────────────────────────────────
+    # Date filter
+    if not sync_all:
+        cutoff = date.today() - timedelta(days=days)
+        activities = [
+            a for a in activities
+            if a.get("startTimeLocal", "")[:10] >= cutoff.isoformat()
+        ]
 
-def fetch_daily_stats() -> list[dict]:
-    from datetime import datetime as _dt
-    end = date.today()
-    start = end - timedelta(days=FETCH_DAYS)
-    stats = []
+    # Only new activities
+    new_activities = [
+        a for a in activities
+        if str(a.get("activityId")) not in already_downloaded
+    ]
 
-    # Fetch in monthly chunks to avoid timeouts
-    current = start
-    while current <= end:
-        chunk_end = min(current + timedelta(days=30), end)
+    if not new_activities:
+        print("No new activities found.")
+        return
+
+    print(f"{len(new_activities)} new activity/activities found.\n")
+
+    downloaded = 0
+    for activity in new_activities:
+        activity_id   = activity.get("activityId")
+        activity_type = activity.get("activityType", {}).get("typeKey", "other")
+        raw_date      = activity.get("startTimeLocal", "")[:10]
+        name          = activity.get("activityName", "Unknown")
+        duration_s    = int(activity.get("duration", 0))
+        duration_min  = duration_s // 60
+
+        if activity_type in SKIP_TYPES:
+            print(f"  [{raw_date}] {name} ({activity_type}) — skipped")
+            already_downloaded.add(str(activity_id))
+            continue
+
+        folder   = get_folder(activity_type)
+        filename = build_filename(activity)
+        dest     = folder / filename
+
+        print(f"  [{raw_date}] {name} ({activity_type}, {duration_min} min)")
+
         try:
-            raw = garth.connectapi(
-                "/userstats-service/wellness/daily",
-                params={"startDate": str(current), "endDate": str(chunk_end)},
+            zip_data = api.download_activity(
+                activity_id,
+                dl_fmt=Garmin.ActivityDownloadFormat.ORIGINAL
             )
-            if isinstance(raw, dict):
-                raw = raw.get("allMetrics", {}).get("metricsMap", {})
-                # Garmin wraps wellness data differently — try flat list
-            if isinstance(raw, list):
-                for item in raw:
-                    stats.append(parse_daily_stat(item))
+            fit_data = extract_fit_from_zip(zip_data)
+
+            if fit_data:
+                dest.write_bytes(fit_data)
+                print(f"    → saved: {dest.relative_to(BASE_DIR)}")
+            else:
+                # Fallback: save the ZIP directly
+                dest_zip = dest.with_suffix(".zip")
+                dest_zip.write_bytes(zip_data)
+                print(f"    → saved as ZIP: {dest_zip.relative_to(BASE_DIR)}")
+
+            already_downloaded.add(str(activity_id))
+            downloaded += 1
+
         except Exception as e:
-            print(f"WARNING: Daily stats chunk {current}–{chunk_end}: {e}")
+            print(f"    Download error: {e}")
 
-        current = chunk_end + timedelta(days=1)
+    # Persist state
+    state["downloaded_ids"] = list(already_downloaded)
+    state["last_sync"] = datetime.now().isoformat()
+    save_state(state)
 
-    # Also try per-day endpoint for recent days
-    for i in range(min(30, FETCH_DAYS)):
-        day = end - timedelta(days=i)
-        try:
-            raw = garth.connectapi(f"/userstats-service/wellness/daily/{day}")
-            if raw:
-                stats.append(parse_daily_stat(raw))
-        except Exception:
-            pass
+    print(f"\nDone: {downloaded}/{len(new_activities)} activities downloaded.")
+    print(f"Files are in: {IMPORTS_DIR.relative_to(BASE_DIR.parent)}/")
 
-    # Deduplicate by date
-    seen = {}
-    for s in stats:
-        if s.get("date") and s["date"] not in seen:
-            seen[s["date"]] = s
-
-    return list(seen.values())
-
-
-def parse_daily_stat(raw: dict) -> dict:
-    return {
-        "date": raw.get("calendarDate", raw.get("date", "")),
-        "stepCount": raw.get("totalSteps"),
-        "restingHeartRate": raw.get("restingHeartRate"),
-        "avgStress": raw.get("averageStressLevel"),
-        "bodyBatteryLow": raw.get("minBodyBattery"),
-        "bodyBatteryHigh": raw.get("maxBodyBattery"),
-        "sleepScoreOverall": (raw.get("sleepScores") or {}).get("overall"),
-        "sleepDurationSeconds": raw.get("sleepTimeSeconds"),
-    }
-
-
-def build_daily_stats_json(stats: list[dict]) -> dict:
-    from datetime import datetime as _dt
-    stats_sorted = sorted(stats, key=lambda s: s.get("date", ""), reverse=True)
-    return {"fetchedAt": _dt.utcnow().isoformat() + "Z", "stats": stats_sorted}
-
-
-# ─── Main ─────────────────────────────────────────────────────────────────────
-
-def main() -> None:
-    login()
-
-    # Activities
-    raw_activities = fetch_activities()
-    activities_data = build_activities_json(raw_activities)
-    ACTIVITIES_FILE.write_text(json.dumps(activities_data, indent=2))
-    print(f"✓ Wrote {len(activities_data['activities'])} activities to {ACTIVITIES_FILE}")
-
-    # Daily stats
-    raw_stats = fetch_daily_stats()
-    stats_data = build_daily_stats_json(raw_stats)
-    DAILY_STATS_FILE.write_text(json.dumps(stats_data, indent=2))
-    print(f"✓ Wrote {len(stats_data['stats'])} daily stats to {DAILY_STATS_FILE}")
-
-    print("\nDone!")
-
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Garmin → imports/ sync")
+    parser.add_argument("--days", type=int, default=7,
+                        help="Activities from the last N days (default: 7)")
+    parser.add_argument("--all", dest="sync_all", action="store_true",
+                        help="Download all not-yet-synced activities")
+    args = parser.parse_args()
+
+    sync(days=args.days, sync_all=args.sync_all)
