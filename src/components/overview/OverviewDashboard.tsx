@@ -11,7 +11,7 @@ import {
   formatDistance, formatDurationHM, formatPace, formatShortDate, daysUntil,
 } from '@/utils/formatters'
 import { currentPlanWeek } from '@/utils/dateUtils'
-import { LayoutDashboard, Footprints, Bike, Waves, Dumbbell, Flame } from 'lucide-react'
+import { LayoutDashboard, Footprints, Bike, Waves, Dumbbell, Flame, Heart } from 'lucide-react'
 import { subDays, parseISO, isAfter } from 'date-fns'
 import { Link } from 'react-router-dom'
 import type { SportType } from '@/types/activity'
@@ -86,7 +86,7 @@ export function OverviewDashboard() {
           <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-rose-500/5" />
           <div className="relative flex items-center justify-between gap-4">
             <div>
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Next time together</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">  Next time together Schatzi (<Heart className="text-rose-400" size={12} />BARA<Heart className="text-rose-400" size={12} />) </div>
               <div className="text-white font-semibold">
                 {GF_DATE.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
