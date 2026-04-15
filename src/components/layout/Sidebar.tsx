@@ -5,6 +5,7 @@ import {
   Bike,
   Waves,
   Dumbbell,
+  Scale,
   CalendarDays,
   Lightbulb,
 } from 'lucide-react'
@@ -15,6 +16,7 @@ const NAV = [
   { to: '/cycling',  icon: Bike,             label: 'Cycling',       color: 'text-green-400' },
   { to: '/swimming', icon: Waves,            label: 'Swimming',      color: 'text-cyan-400' },
   { to: '/strength', icon: Dumbbell,         label: 'Strength',      color: 'text-purple-400' },
+  { to: '/body',     icon: Scale,            label: 'Body',          color: 'text-pink-400' },
   { to: '/training', icon: CalendarDays,     label: 'Training Plan', color: 'text-yellow-300' },
   { to: '/insights', icon: Lightbulb,        label: 'Insights',      color: 'text-blue-400' },
 ]
