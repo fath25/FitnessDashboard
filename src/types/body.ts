@@ -33,3 +33,13 @@ export interface NutritionEntry {
   fatG: number | null
   notes: string
 }
+
+export interface BodyLogData {
+  lastUpdated: string
+  entries: BodyEntry[]
+}
+
+export interface NutritionLogData {
+  lastUpdated: string
+  entries: NutritionEntry[]
+}
