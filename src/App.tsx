@@ -1,9 +1,7 @@
-import { useState } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { FitnessProvider } from '@/context/FitnessContext'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
-import { SetupScreen } from '@/components/auth/SetupScreen'
 import { LoginScreen } from '@/components/auth/LoginScreen'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { OverviewDashboard } from '@/components/overview/OverviewDashboard'
@@ -14,7 +12,6 @@ import { StrengthDashboard } from '@/components/strength/StrengthDashboard'
 import { BodyDashboard } from '@/components/body/BodyDashboard'
 import { TrainingPlanView } from '@/components/training/TrainingPlanView'
 import { InsightsDashboard } from '@/components/insights/InsightsDashboard'
-import { isConfigured } from '@/lib/supabase'
 
 function AppContent() {
   const { user, isLoading } = useAuth()
@@ -41,10 +38,6 @@ function AppContent() {
 }
 
 export default function App() {
-  const [configured, setConfigured] = useState(isConfigured())
-
-  if (!configured) return <SetupScreen onDone={() => setConfigured(true)} />
-
   return (
     <HashRouter>
       <AuthProvider>
