@@ -6,6 +6,7 @@ import { RunningDashboard } from '@/components/running/RunningDashboard'
 import { CyclingDashboard } from '@/components/cycling/CyclingDashboard'
 import { SwimmingDashboard } from '@/components/swimming/SwimmingDashboard'
 import { StrengthDashboard } from '@/components/strength/StrengthDashboard'
+import { BodyDashboard } from '@/components/body/BodyDashboard'
 import { TrainingPlanView } from '@/components/training/TrainingPlanView'
 import { InsightsDashboard } from '@/components/insights/InsightsDashboard'
 
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/cycling" element={<CyclingDashboard />} />
             <Route path="/swimming" element={<SwimmingDashboard />} />
             <Route path="/strength" element={<StrengthDashboard />} />
+            <Route path="/body" element={<BodyDashboard />} />
             <Route path="/training" element={<TrainingPlanView />} />
             <Route path="/insights" element={<InsightsDashboard />} />
           </Routes>

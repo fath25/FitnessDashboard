@@ -1,6 +1,7 @@
 import type { Activity } from '@/types/activity'
 import type { StrengthSet } from '@/types/strength'
 import type { FatigueMetrics } from '@/types/stats'
+import type { UserProfile } from '@/types/body'
 import { USER_CONFIG } from '@/constants/race'
 import { subWeeks, parseISO, isAfter } from 'date-fns'
 
@@ -155,6 +156,28 @@ export function hrTSS(
 /** Exponential moving average */
 function ema(prev: number, value: number, alpha: number): number {
   return alpha * value + (1 - alpha) * prev
+}
+
+// ─── Daily calorie target (Mifflin-St Jeor BMR + activity multiplier) ─────────
+
+export function computeDailyCalorieTarget(
+  profile: UserProfile,
+  recentActivityCount: number,
+): { bmr: number; tdee: number; target: number } {
+  const bmr = Math.round(
+    10 * profile.weightKg +
+    6.25 * profile.heightCm -
+    5 * profile.ageYears +
+    (profile.sex === 'male' ? 5 : -161),
+  )
+  const multiplier =
+    recentActivityCount >= 6 ? 1.9
+    : recentActivityCount >= 4 ? 1.725
+    : recentActivityCount >= 2 ? 1.55
+    : 1.375
+  const tdee = Math.round(bmr * multiplier)
+  const target = tdee + profile.goalCalorieSurplus
+  return { bmr, tdee, target }
 }
 
 export function computeFatigueMetrics(

@@ -6,12 +6,15 @@ import { WorkoutLogger } from './WorkoutLogger'
 import { Dumbbell, Plus, Download, Edit2, Trash2 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+  BarChart, Bar,
 } from 'recharts'
+import { parseISO, startOfISOWeek, format } from 'date-fns'
 import type { StrengthSession } from '@/types/strength'
 import { estimated1RM } from '@/utils/predictions'
 
 const COLOR = '#a855f7'
 const TOP_EXERCISES = ['Back Squat', 'Romanian Deadlift', 'Hip Thrust', 'Bench Press', 'Pull-ups', 'Overhead Press']
+const EXERCISE_COLORS = ['#a855f7', '#f97316', '#22c55e', '#06b6d4']
 
 export function StrengthDashboard() {
   const { activities, dailyStats, strengthSessions, deleteStrengthSession, exportStrengthJSON } = useFitness()
@@ -21,16 +24,19 @@ export function StrengthDashboard() {
 
   const totalVolume = useMemo(() => strengthSessions.reduce((s, ss) => s + ss.totalVolumeKg, 0), [strengthSessions])
 
-  // 1RM trend per top exercise for chart
+  // Exercises present in the data (limited to top 4)
+  const chartExercises = useMemo(() =>
+    TOP_EXERCISES.filter((ex) =>
+      strengthSessions.some((s) => s.sets.some((set) => set.exercise === ex)),
+    ).slice(0, 4),
+  [strengthSessions])
+
+  // 1RM trend per top exercise
   const oneRMTrend = useMemo(() => {
     if (strengthSessions.length === 0) return []
-    const exerciseInData = TOP_EXERCISES.filter((ex) =>
-      strengthSessions.some((s) => s.sets.some((set) => set.exercise === ex)),
-    ).slice(0, 4)
-
     return strengthSessions.map((session) => {
       const point: Record<string, number | string> = { date: session.date }
-      for (const ex of exerciseInData) {
+      for (const ex of chartExercises) {
         const sets = session.sets.filter((s) => s.exercise === ex && !s.isBodyweight && s.reps > 0 && s.weightKg > 0)
         if (sets.length > 0) {
           const best = Math.max(...sets.map((s) => estimated1RM(s.weightKg, s.reps)))
@@ -39,12 +45,35 @@ export function StrengthDashboard() {
       }
       return point
     })
+  }, [strengthSessions, chartExercises])
+
+  // Weekly total volume (last 10 weeks)
+  const weeklyVolume = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const session of strengthSessions) {
+      const key = format(startOfISOWeek(parseISO(session.date)), 'yyyy-MM-dd')
+      map[key] = (map[key] ?? 0) + session.totalVolumeKg
+    }
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-10)
+      .map(([date, volume]) => ({ week: date.slice(5), volume }))
   }, [strengthSessions])
 
-  const exerciseColors = ['#a855f7', '#f97316', '#22c55e', '#06b6d4']
-  const chartExercises = TOP_EXERCISES.filter((ex) =>
-    strengthSessions.some((s) => s.sets.some((set) => set.exercise === ex)),
-  ).slice(0, 4)
+  // Max weight per top exercise (personal bests)
+  const maxWeights = useMemo(() => {
+    const result: Record<string, number> = {}
+    for (const session of strengthSessions) {
+      for (const set of session.sets) {
+        if (!set.isBodyweight && set.weightKg > 0) {
+          if (!result[set.exercise] || set.weightKg > result[set.exercise]) {
+            result[set.exercise] = set.weightKg
+          }
+        }
+      }
+    }
+    return result
+  }, [strengthSessions])
 
   function openEdit(session: StrengthSession) {
     setEditSession(session)
@@ -84,6 +113,20 @@ export function StrengthDashboard() {
         ))}
       </div>
 
+      {/* Max weight personal bests */}
+      {chartExercises.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {chartExercises.map((ex, i) => (
+            <div key={ex} className="bg-slate-800 rounded-xl p-3 border border-slate-700/50">
+              <div className="text-xs text-slate-500 mb-1 truncate">{ex} — max weight</div>
+              <div className="text-xl font-bold font-mono" style={{ color: EXERCISE_COLORS[i] }}>
+                {maxWeights[ex] != null ? `${maxWeights[ex]} kg` : '—'}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 1RM trend chart */}
       {chartExercises.length > 0 && oneRMTrend.length > 1 && (
         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50">
@@ -96,9 +139,25 @@ export function StrengthDashboard() {
               <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }} formatter={(v: number) => [`${v} kg`]} cursor={{ stroke: '#475569', strokeWidth: 1 }} />
               <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
               {chartExercises.map((ex, i) => (
-                <Line key={ex} type="monotone" dataKey={ex} stroke={exerciseColors[i]} strokeWidth={2} dot={false} connectNulls />
+                <Line key={ex} type="monotone" dataKey={ex} stroke={EXERCISE_COLORS[i]} strokeWidth={2} dot={false} connectNulls />
               ))}
             </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Weekly volume chart */}
+      {weeklyVolume.length > 1 && (
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50">
+          <h2 className="text-sm font-semibold text-slate-300 mb-4">Weekly Volume (kg)</h2>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyVolume} margin={{ top: 0, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis dataKey="week" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }} formatter={(v: number) => [`${v.toLocaleString()} kg`, 'Volume']} />
+              <Bar dataKey="volume" fill={COLOR} radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -129,15 +188,12 @@ export function StrengthDashboard() {
                     <div className="flex items-center gap-3 mb-1">
                       <span className="text-white text-sm font-medium">{session.date}</span>
                       <span className="text-slate-500 text-xs">{session.durationMinutes}min</span>
-                      <span className="text-purple-400 text-xs">{session.totalVolumeKg.toLocaleString()} kg volume</span>
+                      <span className="text-purple-400 text-xs">{session.totalVolumeKg.toLocaleString()} kg</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {exerciseNames.map((name) => (
                         <span key={name} className="text-xs bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-full">{name}</span>
                       ))}
-                      {session.sets.length > exerciseNames.length * 3 && (
-                        <span className="text-xs text-slate-500">+more</span>
-                      )}
                     </div>
                     {session.notes && <p className="text-slate-500 text-xs mt-1 truncate">{session.notes}</p>}
                   </div>
