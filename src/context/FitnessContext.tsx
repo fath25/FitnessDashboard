@@ -1,19 +1,62 @@
 import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from 'react'
 import type { Activity, ActivitiesData } from '@/types/activity'
 import type { DailyStats, DailyStatsData } from '@/types/stats'
-import type { StrengthManualData, StrengthSession } from '@/types/strength'
-import type { BodyEntry, NutritionEntry, UserProfile, BodyLogData, NutritionLogData } from '@/types/body'
+import type { StrengthSession } from '@/types/strength'
+import type { BodyEntry, NutritionEntry, UserProfile } from '@/types/body'
 import { DEFAULT_USER_PROFILE } from '@/types/body'
+import { getClient } from '@/lib/supabase'
 
 const BASE = import.meta.env.BASE_URL  // '/FitnessDashboard/'
-const STRENGTH_LS_KEY = 'fitness_strength_log'
-const BODY_LS_KEY = 'fitness_body_log'
-const NUTRITION_LS_KEY = 'fitness_nutrition_log'
-const PROFILE_LS_KEY = 'fitness_user_profile'
-const GITHUB_PAT_KEY = 'github_pat'
-const GITHUB_REPO = 'fath25/FitnessDashboard'
 
-export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error'
+// ── DB row → TS type helpers ──────────────────────────────────────────────────
+
+type DbRow = Record<string, unknown>
+
+function toStrengthSession(r: DbRow): StrengthSession {
+  return {
+    id: r.id as string,
+    date: r.date as string,
+    durationMinutes: r.duration_minutes as number,
+    totalVolumeKg: r.total_volume_kg as number,
+    notes: (r.notes as string) ?? '',
+    sets: r.sets as StrengthSession['sets'],
+  }
+}
+
+function toBodyEntry(r: DbRow): BodyEntry {
+  return {
+    id: r.id as string,
+    date: r.date as string,
+    weightKg: r.weight_kg as number,
+    bodyFatPct: (r.body_fat_pct as number) ?? null,
+    notes: (r.notes as string) ?? '',
+  }
+}
+
+function toNutritionEntry(r: DbRow): NutritionEntry {
+  return {
+    id: r.id as string,
+    date: r.date as string,
+    calories: r.calories as number,
+    proteinG: (r.protein_g as number) ?? null,
+    carbsG: (r.carbs_g as number) ?? null,
+    fatG: (r.fat_g as number) ?? null,
+    notes: (r.notes as string) ?? '',
+  }
+}
+
+function toUserProfile(r: DbRow): UserProfile {
+  return {
+    heightCm: r.height_cm as number,
+    weightKg: r.weight_kg as number,
+    ageYears: r.age_years as number,
+    sex: (r.sex as UserProfile['sex']),
+    bodyFatPct: (r.body_fat_pct as number) ?? null,
+    goalCalorieSurplus: r.goal_calorie_surplus as number,
+  }
+}
+
+// ── Context interface ─────────────────────────────────────────────────────────
 
 interface FitnessContextValue {
   activities: Activity[]
@@ -24,113 +67,59 @@ interface FitnessContextValue {
   userProfile: UserProfile
   isLoading: boolean
   error: string | null
-  syncStatus: SyncStatus
-  addStrengthSession: (session: StrengthSession) => void
-  updateStrengthSession: (session: StrengthSession) => void
-  deleteStrengthSession: (id: string) => void
-  exportStrengthJSON: () => void
-  addBodyEntry: (entry: BodyEntry) => void
-  updateBodyEntry: (entry: BodyEntry) => void
-  deleteBodyEntry: (id: string) => void
-  addNutritionEntry: (entry: NutritionEntry) => void
-  updateNutritionEntry: (entry: NutritionEntry) => void
-  deleteNutritionEntry: (id: string) => void
-  updateUserProfile: (profile: UserProfile) => void
-  syncToGitHub: (pat: string) => Promise<void>
-  getSavedPat: () => string
+  addStrengthSession: (session: StrengthSession) => Promise<void>
+  updateStrengthSession: (session: StrengthSession) => Promise<void>
+  deleteStrengthSession: (id: string) => Promise<void>
+  addBodyEntry: (entry: BodyEntry) => Promise<void>
+  updateBodyEntry: (entry: BodyEntry) => Promise<void>
+  deleteBodyEntry: (id: string) => Promise<void>
+  addNutritionEntry: (entry: NutritionEntry) => Promise<void>
+  updateNutritionEntry: (entry: NutritionEntry) => Promise<void>
+  deleteNutritionEntry: (id: string) => Promise<void>
+  updateUserProfile: (profile: UserProfile) => Promise<void>
 }
 
 const FitnessContext = createContext<FitnessContextValue | null>(null)
-
-function loadJSON<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-/** Base64-encode a UTF-8 string for the GitHub Contents API */
-function toBase64(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)))
-}
-
-/** Commit a single file to GitHub via the Contents API */
-async function githubPut(pat: string, path: string, content: string, message: string) {
-  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`
-  // Fetch current SHA (needed for updates; undefined for new files)
-  const headRes = await fetch(url, { headers: { Authorization: `Bearer ${pat}` } })
-  const sha: string | undefined = headRes.ok ? (await headRes.json()).sha : undefined
-
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${pat}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ message, content: toBase64(content), ...(sha ? { sha } : {}) }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(`GitHub API error ${res.status}: ${(err as { message?: string }).message ?? res.statusText}`)
-  }
-}
 
 export function FitnessProvider({ children }: { children: ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
   const [strengthSessions, setStrengthSessions] = useState<StrengthSession[]>([])
+  const [bodyEntries, setBodyEntries] = useState<BodyEntry[]>([])
+  const [nutritionEntries, setNutritionEntries] = useState<NutritionEntry[]>([])
+  const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
-
-  // Body/nutrition/profile initialised synchronously from localStorage;
-  // will be merged with committed data once the fetch completes.
-  const [userProfile, setUserProfile] = useState<UserProfile>(() =>
-    ({ ...DEFAULT_USER_PROFILE, ...loadJSON<Partial<UserProfile>>(PROFILE_LS_KEY, {}) }),
-  )
-  const [bodyEntries, setBodyEntries] = useState<BodyEntry[]>(() =>
-    loadJSON<BodyEntry[]>(BODY_LS_KEY, []),
-  )
-  const [nutritionEntries, setNutritionEntries] = useState<NutritionEntry[]>(() =>
-    loadJSON<NutritionEntry[]>(NUTRITION_LS_KEY, []),
-  )
 
   useEffect(() => {
     async function load() {
       try {
-        const [actRes, statsRes, strengthRes, bodyRes, nutritionRes] = await Promise.allSettled([
-          fetch(`${BASE}data/activities.json`).then((r) => r.json() as Promise<ActivitiesData>),
-          fetch(`${BASE}data/daily_stats.json`).then((r) => r.json() as Promise<DailyStatsData>),
-          fetch(`${BASE}data/strength_manual.json`).then((r) => r.json() as Promise<StrengthManualData>),
-          fetch(`${BASE}data/body_log.json`).then((r) => r.json() as Promise<BodyLogData>),
-          fetch(`${BASE}data/nutrition_log.json`).then((r) => r.json() as Promise<NutritionLogData>),
-        ])
+        const db = getClient()
+
+        const [actRes, statsRes, strengthRes, bodyRes, nutritionRes, profileRes] =
+          await Promise.allSettled([
+            fetch(`${BASE}data/activities.json`).then((r) => r.json() as Promise<ActivitiesData>),
+            fetch(`${BASE}data/daily_stats.json`).then((r) => r.json() as Promise<DailyStatsData>),
+            db.from('strength_sessions').select('*').order('date', { ascending: false }),
+            db.from('body_entries').select('*').order('date', { ascending: false }),
+            db.from('nutrition_entries').select('*').order('date', { ascending: false }),
+            db.from('user_profiles').select('*').maybeSingle(),
+          ])
 
         if (actRes.status === 'fulfilled') setActivities(actRes.value.activities ?? [])
         if (statsRes.status === 'fulfilled') setDailyStats(statsRes.value.stats ?? [])
 
-        // Merge helper: localStorage entries take precedence over committed ones by id
-        function mergeById<T extends { id: string }>(committed: T[], local: T[]): T[] {
-          const filtered = committed.filter((c) => !local.some((l) => l.id === c.id))
-          return [...local, ...filtered].sort((a, b) => (a as { date?: string }).date?.localeCompare((b as { date?: string }).date ?? '') ?? 0)
-        }
+        if (strengthRes.status === 'fulfilled' && !strengthRes.value.error)
+          setStrengthSessions((strengthRes.value.data ?? []).map(toStrengthSession))
 
-        // Strength
-        const committedStrength = strengthRes.status === 'fulfilled' ? (strengthRes.value.sessions ?? []) : []
-        const localStrength = loadJSON<StrengthSession[]>(STRENGTH_LS_KEY, [])
-        setStrengthSessions(mergeById(committedStrength, localStrength).sort((a, b) => b.date.localeCompare(a.date)))
+        if (bodyRes.status === 'fulfilled' && !bodyRes.value.error)
+          setBodyEntries((bodyRes.value.data ?? []).map(toBodyEntry))
 
-        // Body
-        const committedBody = bodyRes.status === 'fulfilled' ? (bodyRes.value.entries ?? []) : []
-        const localBody = loadJSON<BodyEntry[]>(BODY_LS_KEY, [])
-        setBodyEntries(mergeById(committedBody, localBody).sort((a, b) => b.date.localeCompare(a.date)))
+        if (nutritionRes.status === 'fulfilled' && !nutritionRes.value.error)
+          setNutritionEntries((nutritionRes.value.data ?? []).map(toNutritionEntry))
 
-        // Nutrition
-        const committedNutrition = nutritionRes.status === 'fulfilled' ? (nutritionRes.value.entries ?? []) : []
-        const localNutrition = loadJSON<NutritionEntry[]>(NUTRITION_LS_KEY, [])
-        setNutritionEntries(mergeById(committedNutrition, localNutrition).sort((a, b) => b.date.localeCompare(a.date)))
+        if (profileRes.status === 'fulfilled' && !profileRes.value.error && profileRes.value.data)
+          setUserProfile(toUserProfile(profileRes.value.data as DbRow))
 
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load data')
@@ -143,112 +132,129 @@ export function FitnessProvider({ children }: { children: ReactNode }) {
 
   // ── Strength ────────────────────────────────────────────────────────────────
 
-  function persistStrength(sessions: StrengthSession[]) {
-    const sorted = [...sessions].sort((a, b) => b.date.localeCompare(a.date))
-    setStrengthSessions(sorted)
-    localStorage.setItem(STRENGTH_LS_KEY, JSON.stringify(sorted))
+  async function addStrengthSession(session: StrengthSession) {
+    setStrengthSessions((prev) => [session, ...prev])
+    const { error } = await getClient().from('strength_sessions').insert({
+      id: session.id,
+      date: session.date,
+      duration_minutes: session.durationMinutes,
+      total_volume_kg: session.totalVolumeKg,
+      notes: session.notes,
+      sets: session.sets,
+    })
+    if (error) throw error
   }
 
-  function addStrengthSession(session: StrengthSession) { persistStrength([...strengthSessions, session]) }
-  function updateStrengthSession(session: StrengthSession) { persistStrength(strengthSessions.map((s) => (s.id === session.id ? session : s))) }
-  function deleteStrengthSession(id: string) { persistStrength(strengthSessions.filter((s) => s.id !== id)) }
+  async function updateStrengthSession(session: StrengthSession) {
+    setStrengthSessions((prev) => prev.map((s) => (s.id === session.id ? session : s)))
+    const { error } = await getClient().from('strength_sessions').update({
+      date: session.date,
+      duration_minutes: session.durationMinutes,
+      total_volume_kg: session.totalVolumeKg,
+      notes: session.notes,
+      sets: session.sets,
+    }).eq('id', session.id)
+    if (error) throw error
+  }
 
-  function exportStrengthJSON() {
-    const data: StrengthManualData = { lastUpdated: new Date().toISOString(), sessions: strengthSessions }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'strength_manual.json'
-    a.click()
-    URL.revokeObjectURL(url)
+  async function deleteStrengthSession(id: string) {
+    setStrengthSessions((prev) => prev.filter((s) => s.id !== id))
+    const { error } = await getClient().from('strength_sessions').delete().eq('id', id)
+    if (error) throw error
   }
 
   // ── Body composition ─────────────────────────────────────────────────────────
 
-  function persistBody(entries: BodyEntry[]) {
-    const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date))
-    setBodyEntries(sorted)
-    localStorage.setItem(BODY_LS_KEY, JSON.stringify(sorted))
+  async function addBodyEntry(entry: BodyEntry) {
+    setBodyEntries((prev) => [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
+    const { error } = await getClient().from('body_entries').insert({
+      id: entry.id,
+      date: entry.date,
+      weight_kg: entry.weightKg,
+      body_fat_pct: entry.bodyFatPct,
+      notes: entry.notes,
+    })
+    if (error) throw error
   }
 
-  function addBodyEntry(entry: BodyEntry) { persistBody([...bodyEntries, entry]) }
-  function updateBodyEntry(entry: BodyEntry) { persistBody(bodyEntries.map((e) => (e.id === entry.id ? entry : e))) }
-  function deleteBodyEntry(id: string) { persistBody(bodyEntries.filter((e) => e.id !== id)) }
+  async function updateBodyEntry(entry: BodyEntry) {
+    setBodyEntries((prev) => prev.map((e) => (e.id === entry.id ? entry : e)))
+    const { error } = await getClient().from('body_entries').update({
+      date: entry.date,
+      weight_kg: entry.weightKg,
+      body_fat_pct: entry.bodyFatPct,
+      notes: entry.notes,
+    }).eq('id', entry.id)
+    if (error) throw error
+  }
+
+  async function deleteBodyEntry(id: string) {
+    setBodyEntries((prev) => prev.filter((e) => e.id !== id))
+    const { error } = await getClient().from('body_entries').delete().eq('id', id)
+    if (error) throw error
+  }
 
   // ── Nutrition ────────────────────────────────────────────────────────────────
 
-  function persistNutrition(entries: NutritionEntry[]) {
-    const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date))
-    setNutritionEntries(sorted)
-    localStorage.setItem(NUTRITION_LS_KEY, JSON.stringify(sorted))
+  async function addNutritionEntry(entry: NutritionEntry) {
+    setNutritionEntries((prev) => [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
+    const { error } = await getClient().from('nutrition_entries').insert({
+      id: entry.id,
+      date: entry.date,
+      calories: entry.calories,
+      protein_g: entry.proteinG,
+      carbs_g: entry.carbsG,
+      fat_g: entry.fatG,
+      notes: entry.notes,
+    })
+    if (error) throw error
   }
 
-  function addNutritionEntry(entry: NutritionEntry) { persistNutrition([...nutritionEntries, entry]) }
-  function updateNutritionEntry(entry: NutritionEntry) { persistNutrition(nutritionEntries.map((e) => (e.id === entry.id ? entry : e))) }
-  function deleteNutritionEntry(id: string) { persistNutrition(nutritionEntries.filter((e) => e.id !== id)) }
+  async function updateNutritionEntry(entry: NutritionEntry) {
+    setNutritionEntries((prev) => prev.map((e) => (e.id === entry.id ? entry : e)))
+    const { error } = await getClient().from('nutrition_entries').update({
+      date: entry.date,
+      calories: entry.calories,
+      protein_g: entry.proteinG,
+      carbs_g: entry.carbsG,
+      fat_g: entry.fatG,
+      notes: entry.notes,
+    }).eq('id', entry.id)
+    if (error) throw error
+  }
+
+  async function deleteNutritionEntry(id: string) {
+    setNutritionEntries((prev) => prev.filter((e) => e.id !== id))
+    const { error } = await getClient().from('nutrition_entries').delete().eq('id', id)
+    if (error) throw error
+  }
 
   // ── User profile ─────────────────────────────────────────────────────────────
 
-  function updateUserProfile(profile: UserProfile) {
+  async function updateUserProfile(profile: UserProfile) {
     setUserProfile(profile)
-    localStorage.setItem(PROFILE_LS_KEY, JSON.stringify(profile))
-  }
-
-  // ── GitHub sync ───────────────────────────────────────────────────────────────
-
-  function getSavedPat(): string {
-    return localStorage.getItem(GITHUB_PAT_KEY) ?? ''
-  }
-
-  async function syncToGitHub(pat: string) {
-    setSyncStatus('syncing')
-    try {
-      // Save PAT for future use
-      localStorage.setItem(GITHUB_PAT_KEY, pat)
-
-      const today = new Date().toISOString().slice(0, 10)
-
-      await githubPut(
-        pat,
-        'public/data/strength_manual.json',
-        JSON.stringify({ lastUpdated: new Date().toISOString(), sessions: strengthSessions }, null, 2),
-        `sync: strength log ${today}`,
-      )
-      await githubPut(
-        pat,
-        'public/data/body_log.json',
-        JSON.stringify({ lastUpdated: new Date().toISOString(), entries: bodyEntries }, null, 2),
-        `sync: body log ${today}`,
-      )
-      await githubPut(
-        pat,
-        'public/data/nutrition_log.json',
-        JSON.stringify({ lastUpdated: new Date().toISOString(), entries: nutritionEntries }, null, 2),
-        `sync: nutrition log ${today}`,
-      )
-
-      setSyncStatus('success')
-      setTimeout(() => setSyncStatus('idle'), 4000)
-    } catch (e) {
-      console.error('Sync failed:', e)
-      setSyncStatus('error')
-      setTimeout(() => setSyncStatus('idle'), 6000)
-      throw e
-    }
+    const { error } = await getClient().from('user_profiles').upsert({
+      height_cm: profile.heightCm,
+      weight_kg: profile.weightKg,
+      age_years: profile.ageYears,
+      sex: profile.sex,
+      body_fat_pct: profile.bodyFatPct,
+      goal_calorie_surplus: profile.goalCalorieSurplus,
+    })
+    if (error) throw error
   }
 
   const value = useMemo<FitnessContextValue>(
     () => ({
       activities, dailyStats, strengthSessions, bodyEntries, nutritionEntries, userProfile,
-      isLoading, error, syncStatus,
-      addStrengthSession, updateStrengthSession, deleteStrengthSession, exportStrengthJSON,
+      isLoading, error,
+      addStrengthSession, updateStrengthSession, deleteStrengthSession,
       addBodyEntry, updateBodyEntry, deleteBodyEntry,
       addNutritionEntry, updateNutritionEntry, deleteNutritionEntry,
-      updateUserProfile, syncToGitHub, getSavedPat,
+      updateUserProfile,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activities, dailyStats, strengthSessions, bodyEntries, nutritionEntries, userProfile, isLoading, error, syncStatus],
+    [activities, dailyStats, strengthSessions, bodyEntries, nutritionEntries, userProfile, isLoading, error],
   )
 
   return <FitnessContext.Provider value={value}>{children}</FitnessContext.Provider>

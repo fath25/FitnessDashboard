@@ -3,7 +3,7 @@ import { useFitness } from '@/context/FitnessContext'
 import { useInsights } from '@/hooks/useInsights'
 import { StatCard } from '@/components/shared/StatCard'
 import { WorkoutLogger } from './WorkoutLogger'
-import { Dumbbell, Plus, Download, Edit2, Trash2 } from 'lucide-react'
+import { Dumbbell, Plus, Edit2, Trash2 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
   BarChart, Bar,
@@ -17,7 +17,7 @@ const TOP_EXERCISES = ['Back Squat', 'Romanian Deadlift', 'Hip Thrust', 'Bench P
 const EXERCISE_COLORS = ['#a855f7', '#f97316', '#22c55e', '#06b6d4']
 
 export function StrengthDashboard() {
-  const { activities, dailyStats, strengthSessions, deleteStrengthSession, exportStrengthJSON } = useFitness()
+  const { activities, dailyStats, strengthSessions, deleteStrengthSession } = useFitness()
   const insights = useInsights(activities, strengthSessions, dailyStats)
   const [showLogger, setShowLogger] = useState(false)
   const [editSession, setEditSession] = useState<StrengthSession | undefined>()
@@ -87,14 +87,6 @@ export function StrengthDashboard() {
           <Dumbbell className="text-purple-400" size={24} /> Strength
         </h1>
         <div className="flex gap-2">
-          {strengthSessions.length > 0 && (
-            <button
-              onClick={exportStrengthJSON}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
-            >
-              <Download size={14} /> Export JSON
-            </button>
-          )}
           <button
             onClick={() => { setEditSession(undefined); setShowLogger(true) }}
             className="flex items-center gap-2 px-3 py-2 text-sm text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
