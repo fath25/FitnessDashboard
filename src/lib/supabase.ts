@@ -1,31 +1,19 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const CONFIG_KEY = 'supabase_config'
-
-interface SupabaseConfig { url: string; anonKey: string }
-
-export function getConfig(): SupabaseConfig | null {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
-}
-
-export function saveConfig(url: string, anonKey: string): void {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, anonKey }))
-  _client = createClient(url, anonKey)
-}
+// Primary: env vars baked in at build time (set as GitHub Actions variables).
+// These are safe to be public — Supabase anon keys are designed for browser use.
+const ENV_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const ENV_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
 let _client: SupabaseClient | null = null
 
 export function getClient(): SupabaseClient {
   if (_client) return _client
-  const cfg = getConfig()
-  if (!cfg) throw new Error('Supabase not configured')
-  _client = createClient(cfg.url, cfg.anonKey)
+  if (!ENV_URL || !ENV_KEY) throw new Error('Supabase env vars not set')
+  _client = createClient(ENV_URL, ENV_KEY)
   return _client
 }
 
 export function isConfigured(): boolean {
-  return getConfig() !== null
+  return !!(ENV_URL && ENV_KEY)
 }
