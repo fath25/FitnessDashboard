@@ -1,10 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useFitness } from '@/context/FitnessContext'
 import { useInsights } from '@/hooks/useInsights'
 import { StatCard } from '@/components/shared/StatCard'
 import { EmptyState } from '@/components/shared/LoadingSpinner'
+import { ActivityDetailModal } from '@/components/shared/ActivityDetailModal'
 import { formatPace, formatDuration, formatDistance, formatDurationHM, formatShortDate } from '@/utils/formatters'
 import { Footprints, TrendingUp, Timer, Mountain } from 'lucide-react'
+import type { Activity } from '@/types/activity'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -17,6 +19,7 @@ export function RunningDashboard() {
   const { activities, dailyStats, strengthSessions } = useFitness()
   const insights = useInsights(activities, strengthSessions, dailyStats)
   const runs = useMemo(() => activities.filter((a) => a.sport === 'running'), [activities])
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
   const stats12w = useMemo(() => {
     const cutoff = subWeeks(new Date(), 12)
@@ -138,9 +141,13 @@ export function RunningDashboard() {
         </div>
       )}
 
+      {selectedActivity && (
+        <ActivityDetailModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />
+      )}
+
       {/* Recent runs */}
       <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Recent Runs</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3">Recent Runs — click for details</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -155,7 +162,11 @@ export function RunningDashboard() {
             </thead>
             <tbody>
               {runs.slice(0, 10).map((r) => (
-                <tr key={r.id} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+                <tr
+                  key={r.id}
+                  className="border-b border-slate-700/50 hover:bg-slate-700/20 cursor-pointer"
+                  onClick={() => setSelectedActivity(r)}
+                >
                   <td className="py-2 pr-4 text-slate-400 whitespace-nowrap">{formatShortDate(r.startTime.slice(0, 10))}</td>
                   <td className="py-2 pr-4 text-slate-300 max-w-[180px] truncate">{r.name}</td>
                   <td className="py-2 pr-4 text-right font-mono text-white">{formatDistance(r.distanceMeters)}</td>
