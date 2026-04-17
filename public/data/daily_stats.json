@@ -1,11 +1,21 @@
 {
-  "fetchedAt": "2026-04-16T06:49:17Z",
+  "fetchedAt": "2026-04-17T06:49:16Z",
   "stats": [
     {
+      "date": "2026-04-17",
+      "stepCount": 438,
+      "restingHeartRate": 57,
+      "avgStress": 10,
+      "sleepScoreOverall": 92,
+      "sleepDurationSeconds": 25140,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
       "date": "2026-04-16",
-      "stepCount": 1001,
-      "restingHeartRate": 62,
-      "avgStress": 27,
+      "stepCount": 11841,
+      "restingHeartRate": 61,
+      "avgStress": 29,
       "sleepScoreOverall": 54,
       "sleepDurationSeconds": 19560,
       "bodyBatteryLow": null,
@@ -588,16 +598,6 @@
       "avgStress": 27,
       "sleepScoreOverall": 90,
       "sleepDurationSeconds": 28140,
-      "bodyBatteryLow": null,
-      "bodyBatteryHigh": null
-    },
-    {
-      "date": "2026-02-16",
-      "stepCount": 14166,
-      "restingHeartRate": 58,
-      "avgStress": 27,
-      "sleepScoreOverall": 71,
-      "sleepDurationSeconds": 21360,
       "bodyBatteryLow": null,
       "bodyBatteryHigh": null
     }
