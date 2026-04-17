@@ -421,7 +421,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Fetch Garmin data → public/data/ JSON for the dashboard"
     )
-    parser.add_argument("--days", type=int, default=365,
+    parser.add_argument("--days", type=int, default=7,
                         help="Activities from the last N days (default: 365)")
     parser.add_argument("--all", dest="sync_all", action="store_true",
                         help="Fetch all activities (ignores --days)")
