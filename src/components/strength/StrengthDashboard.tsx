@@ -175,7 +175,7 @@ export function StrengthDashboard() {
       )}
 
       {/* Training load chart */}
-      {trainingLoadData.length > 1 && (
+      {trainingLoadData.length > 0 && (
         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50">
           <h2 className="text-sm font-semibold text-slate-300 mb-1">Training Load</h2>
           <p className="text-xs text-slate-500 mb-4">Weekly sessions (bars) with 4-week rolling avg volume (line)</p>
