@@ -21,3 +21,4 @@ scripts/.garmin_sync_state.json
 # Editor
 .vscode/
 .idea/
+CLAUDE.md

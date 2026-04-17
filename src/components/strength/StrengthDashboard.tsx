@@ -6,7 +6,7 @@ import { WorkoutLogger } from './WorkoutLogger'
 import { Dumbbell, Plus, Edit2, Trash2 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
-  BarChart, Bar,
+  BarChart, Bar, ComposedChart, Area,
 } from 'recharts'
 import { parseISO, startOfISOWeek, format } from 'date-fns'
 import type { StrengthSession } from '@/types/strength'
@@ -58,6 +58,26 @@ export function StrengthDashboard() {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-10)
       .map(([date, volume]) => ({ week: date.slice(5), volume }))
+  }, [strengthSessions])
+
+  // Training load: weekly sessions + 4-week rolling average volume
+  const trainingLoadData = useMemo(() => {
+    const map: Record<string, { sessions: number; volume: number }> = {}
+    for (const session of strengthSessions) {
+      const key = format(startOfISOWeek(parseISO(session.date)), 'yyyy-MM-dd')
+      if (!map[key]) map[key] = { sessions: 0, volume: 0 }
+      map[key].sessions++
+      map[key].volume += session.totalVolumeKg
+    }
+    const sorted = Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-16)
+    // 4-week rolling average volume
+    return sorted.map(([date, { sessions, volume }], idx) => {
+      const window = sorted.slice(Math.max(0, idx - 3), idx + 1)
+      const avgVol = Math.round(window.reduce((s, [, d]) => s + d.volume, 0) / window.length)
+      return { week: date.slice(5), sessions, volume: Math.round(volume), avgVol }
+    })
   }, [strengthSessions])
 
   // Max weight per top exercise (personal bests)
@@ -150,6 +170,48 @@ export function StrengthDashboard() {
               <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }} formatter={(v: number) => [`${v.toLocaleString()} kg`, 'Volume']} />
               <Bar dataKey="volume" fill={COLOR} radius={[4, 4, 0, 0]} />
             </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Training load chart */}
+      {trainingLoadData.length > 1 && (
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50">
+          <h2 className="text-sm font-semibold text-slate-300 mb-1">Training Load</h2>
+          <p className="text-xs text-slate-500 mb-4">Weekly sessions (bars) with 4-week rolling avg volume (line)</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <ComposedChart data={trainingLoadData} margin={{ top: 0, right: 44, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis dataKey="week" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+              <YAxis yAxisId="sessions" tick={{ fill: '#94a3b8', fontSize: 11 }} allowDecimals={false} domain={[0, 'auto']} />
+              <YAxis
+                yAxisId="volume"
+                orientation="right"
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tickFormatter={(v) => `${(v / 1000).toFixed(0)}t`}
+                width={40}
+              />
+              <Tooltip
+                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
+                formatter={(v: number, name: string) => {
+                  if (name === 'sessions') return [v, 'Sessions']
+                  if (name === 'avgVol') return [`${v.toLocaleString()} kg`, '4-wk avg vol']
+                  return [v]
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
+              <Bar yAxisId="sessions" dataKey="sessions" fill={COLOR} opacity={0.7} radius={[3, 3, 0, 0]} name="sessions" />
+              <Line
+                yAxisId="volume"
+                type="monotone"
+                dataKey="avgVol"
+                stroke="#f97316"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+                name="avgVol"
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
