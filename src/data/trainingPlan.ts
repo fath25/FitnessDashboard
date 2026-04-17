@@ -2,7 +2,6 @@ import { addDays, format } from 'date-fns'
 import type { TrainingDay, TrainingPhase, PlannedWorkout, DayOfWeek } from '@/types/training'
 import { PLAN_START_DATE, RACE_DATE, TOTAL_PLAN_WEEKS } from '@/constants/race'
 
-const DAY_NAMES: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function phase(week: number): TrainingPhase {
   if (week <= 4)  return 'base1'
@@ -239,13 +238,15 @@ function generatePlan(): TrainingDay[] {
 
   for (let week = 1; week <= TOTAL_PLAN_WEEKS; week++) {
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const date = format(addDays(PLAN_START_DATE, (week - 1) * 7 + dayIndex), 'yyyy-MM-dd')
+      const dayDate = addDays(PLAN_START_DATE, (week - 1) * 7 + dayIndex)
+      const date = format(dayDate, 'yyyy-MM-dd')
+      const dayOfWeek = format(dayDate, 'EEE') as DayOfWeek
       const workouts = buildDay(week, dayIndex)
       days.push({
         weekNumber: week,
         phase: phase(week),
         date,
-        dayOfWeek: DAY_NAMES[dayIndex],
+        dayOfWeek,
         workouts,
         actualActivityIds: [],
         isRaceDay: date === raceDateStr,
