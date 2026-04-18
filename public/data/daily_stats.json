@@ -1,15 +1,25 @@
 {
-  "fetchedAt": "2026-04-17T14:32:39Z",
+  "fetchedAt": "2026-04-18T06:36:01Z",
   "stats": [
     {
+      "date": "2026-04-18",
+      "stepCount": 273,
+      "restingHeartRate": 54,
+      "avgStress": 10,
+      "sleepScoreOverall": 86,
+      "sleepDurationSeconds": 24900,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
       "date": "2026-04-17",
-      "stepCount": 3110,
+      "stepCount": 8599,
       "restingHeartRate": 57,
-      "avgStress": 23,
+      "avgStress": 22,
       "sleepScoreOverall": 92,
       "sleepDurationSeconds": 25140,
-      "bodyBatteryLow": 64,
-      "bodyBatteryHigh": 42
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-16",
@@ -18,8 +28,8 @@
       "avgStress": 29,
       "sleepScoreOverall": 54,
       "sleepDurationSeconds": 19560,
-      "bodyBatteryLow": 43,
-      "bodyBatteryHigh": 38
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-15",
@@ -28,8 +38,8 @@
       "avgStress": 32,
       "sleepScoreOverall": 90,
       "sleepDurationSeconds": 25020,
-      "bodyBatteryLow": 61,
-      "bodyBatteryHigh": 74
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-14",
@@ -38,8 +48,8 @@
       "avgStress": 30,
       "sleepScoreOverall": 89,
       "sleepDurationSeconds": 26220,
-      "bodyBatteryLow": 46,
-      "bodyBatteryHigh": 69
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-13",
@@ -48,8 +58,8 @@
       "avgStress": 24,
       "sleepScoreOverall": 80,
       "sleepDurationSeconds": 21960,
-      "bodyBatteryLow": 92,
-      "bodyBatteryHigh": 60
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-12",
@@ -58,8 +68,8 @@
       "avgStress": 25,
       "sleepScoreOverall": 86,
       "sleepDurationSeconds": 24480,
-      "bodyBatteryLow": 68,
-      "bodyBatteryHigh": 74
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-11",
@@ -68,8 +78,8 @@
       "avgStress": 24,
       "sleepScoreOverall": 85,
       "sleepDurationSeconds": 24240,
-      "bodyBatteryLow": 77,
-      "bodyBatteryHigh": 77
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-10",
@@ -78,8 +88,8 @@
       "avgStress": 27,
       "sleepScoreOverall": 82,
       "sleepDurationSeconds": 23520,
-      "bodyBatteryLow": 56,
-      "bodyBatteryHigh": 57
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-09",
@@ -88,8 +98,8 @@
       "avgStress": 32,
       "sleepScoreOverall": 83,
       "sleepDurationSeconds": 24300,
-      "bodyBatteryLow": 57,
-      "bodyBatteryHigh": 56
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-08",
@@ -98,8 +108,8 @@
       "avgStress": 32,
       "sleepScoreOverall": 97,
       "sleepDurationSeconds": 25440,
-      "bodyBatteryLow": 66,
-      "bodyBatteryHigh": 72
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-07",
@@ -108,8 +118,8 @@
       "avgStress": 31,
       "sleepScoreOverall": 81,
       "sleepDurationSeconds": 24240,
-      "bodyBatteryLow": 68,
-      "bodyBatteryHigh": 54
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-06",
@@ -118,8 +128,8 @@
       "avgStress": 29,
       "sleepScoreOverall": 91,
       "sleepDurationSeconds": 24660,
-      "bodyBatteryLow": 65,
-      "bodyBatteryHigh": 85
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-05",
@@ -128,8 +138,8 @@
       "avgStress": 23,
       "sleepScoreOverall": 75,
       "sleepDurationSeconds": 22800,
-      "bodyBatteryLow": 73,
-      "bodyBatteryHigh": 41
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-04",
@@ -138,8 +148,8 @@
       "avgStress": 30,
       "sleepScoreOverall": 72,
       "sleepDurationSeconds": 18420,
-      "bodyBatteryLow": 50,
-      "bodyBatteryHigh": 48
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-03",
@@ -148,8 +158,8 @@
       "avgStress": 35,
       "sleepScoreOverall": 85,
       "sleepDurationSeconds": 21780,
-      "bodyBatteryLow": 42,
-      "bodyBatteryHigh": 79
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-02",
@@ -158,8 +168,8 @@
       "avgStress": 32,
       "sleepScoreOverall": 86,
       "sleepDurationSeconds": 25020,
-      "bodyBatteryLow": 75,
-      "bodyBatteryHigh": 61
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-04-01",
@@ -168,8 +178,8 @@
       "avgStress": 31,
       "sleepScoreOverall": 75,
       "sleepDurationSeconds": 23280,
-      "bodyBatteryLow": 50,
-      "bodyBatteryHigh": 50
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-31",
@@ -178,8 +188,8 @@
       "avgStress": 27,
       "sleepScoreOverall": 88,
       "sleepDurationSeconds": 25200,
-      "bodyBatteryLow": 65,
-      "bodyBatteryHigh": 75
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-30",
@@ -188,8 +198,8 @@
       "avgStress": 24,
       "sleepScoreOverall": 82,
       "sleepDurationSeconds": 25380,
-      "bodyBatteryLow": 62,
-      "bodyBatteryHigh": 35
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-29",
@@ -198,8 +208,8 @@
       "avgStress": 34,
       "sleepScoreOverall": 83,
       "sleepDurationSeconds": 22140,
-      "bodyBatteryLow": 58,
-      "bodyBatteryHigh": 59
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-28",
@@ -208,8 +218,8 @@
       "avgStress": 31,
       "sleepScoreOverall": 86,
       "sleepDurationSeconds": 24240,
-      "bodyBatteryLow": 55,
-      "bodyBatteryHigh": 80
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-27",
@@ -218,8 +228,8 @@
       "avgStress": 28,
       "sleepScoreOverall": 82,
       "sleepDurationSeconds": 23760,
-      "bodyBatteryLow": 52,
-      "bodyBatteryHigh": 52
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-26",
@@ -228,8 +238,8 @@
       "avgStress": 29,
       "sleepScoreOverall": 86,
       "sleepDurationSeconds": 24720,
-      "bodyBatteryLow": 76,
-      "bodyBatteryHigh": 64
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-25",
@@ -238,8 +248,8 @@
       "avgStress": 33,
       "sleepScoreOverall": 68,
       "sleepDurationSeconds": 24480,
-      "bodyBatteryLow": 44,
-      "bodyBatteryHigh": 45
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-24",
@@ -248,8 +258,8 @@
       "avgStress": 41,
       "sleepScoreOverall": 82,
       "sleepDurationSeconds": 26340,
-      "bodyBatteryLow": 45,
-      "bodyBatteryHigh": 52
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-23",
@@ -258,8 +268,8 @@
       "avgStress": 33,
       "sleepScoreOverall": 72,
       "sleepDurationSeconds": 18780,
-      "bodyBatteryLow": 80,
-      "bodyBatteryHigh": 65
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-22",
@@ -268,8 +278,8 @@
       "avgStress": 26,
       "sleepScoreOverall": 67,
       "sleepDurationSeconds": 20280,
-      "bodyBatteryLow": 59,
-      "bodyBatteryHigh": 41
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-21",
@@ -278,8 +288,8 @@
       "avgStress": 34,
       "sleepScoreOverall": 79,
       "sleepDurationSeconds": 23100,
-      "bodyBatteryLow": 53,
-      "bodyBatteryHigh": 72
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-20",
@@ -288,8 +298,8 @@
       "avgStress": 26,
       "sleepScoreOverall": 81,
       "sleepDurationSeconds": 21600,
-      "bodyBatteryLow": 75,
-      "bodyBatteryHigh": 74
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     },
     {
       "date": "2026-03-19",
@@ -298,8 +308,298 @@
       "avgStress": 28,
       "sleepScoreOverall": 72,
       "sleepDurationSeconds": 19800,
-      "bodyBatteryLow": 62,
-      "bodyBatteryHigh": 56
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-18",
+      "stepCount": 15274,
+      "restingHeartRate": 57,
+      "avgStress": 34,
+      "sleepScoreOverall": 93,
+      "sleepDurationSeconds": 24720,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-17",
+      "stepCount": 13499,
+      "restingHeartRate": 59,
+      "avgStress": 28,
+      "sleepScoreOverall": 84,
+      "sleepDurationSeconds": 25320,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-16",
+      "stepCount": 10305,
+      "restingHeartRate": 63,
+      "avgStress": 36,
+      "sleepScoreOverall": 71,
+      "sleepDurationSeconds": 22800,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-15",
+      "stepCount": 9687,
+      "restingHeartRate": 61,
+      "avgStress": 35,
+      "sleepScoreOverall": 78,
+      "sleepDurationSeconds": 23100,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-14",
+      "stepCount": 13958,
+      "restingHeartRate": 61,
+      "avgStress": 33,
+      "sleepScoreOverall": 78,
+      "sleepDurationSeconds": 23520,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-13",
+      "stepCount": 12721,
+      "restingHeartRate": 57,
+      "avgStress": 21,
+      "sleepScoreOverall": 82,
+      "sleepDurationSeconds": 26100,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-12",
+      "stepCount": 8609,
+      "restingHeartRate": 63,
+      "avgStress": 29,
+      "sleepScoreOverall": 74,
+      "sleepDurationSeconds": 23700,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-11",
+      "stepCount": 11330,
+      "restingHeartRate": 60,
+      "avgStress": 28,
+      "sleepScoreOverall": 77,
+      "sleepDurationSeconds": 23400,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-10",
+      "stepCount": 11427,
+      "restingHeartRate": 54,
+      "avgStress": 30,
+      "sleepScoreOverall": 88,
+      "sleepDurationSeconds": 27168,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-09",
+      "stepCount": 15117,
+      "restingHeartRate": 57,
+      "avgStress": 32,
+      "sleepScoreOverall": 48,
+      "sleepDurationSeconds": 14820,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-08",
+      "stepCount": 15822,
+      "restingHeartRate": 62,
+      "avgStress": 32,
+      "sleepScoreOverall": 60,
+      "sleepDurationSeconds": 18960,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-07",
+      "stepCount": 12056,
+      "restingHeartRate": 61,
+      "avgStress": 36,
+      "sleepScoreOverall": 67,
+      "sleepDurationSeconds": 20820,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-06",
+      "stepCount": 16428,
+      "restingHeartRate": 59,
+      "avgStress": 26,
+      "sleepScoreOverall": 79,
+      "sleepDurationSeconds": 23280,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-05",
+      "stepCount": 18267,
+      "restingHeartRate": 58,
+      "avgStress": 32,
+      "sleepScoreOverall": 79,
+      "sleepDurationSeconds": 23400,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-04",
+      "stepCount": 13474,
+      "restingHeartRate": 62,
+      "avgStress": 31,
+      "sleepScoreOverall": 66,
+      "sleepDurationSeconds": 22500,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-03",
+      "stepCount": 14012,
+      "restingHeartRate": 58,
+      "avgStress": 31,
+      "sleepScoreOverall": 68,
+      "sleepDurationSeconds": 20340,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-02",
+      "stepCount": 11866,
+      "restingHeartRate": 60,
+      "avgStress": 32,
+      "sleepScoreOverall": 64,
+      "sleepDurationSeconds": 21240,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-03-01",
+      "stepCount": 7605,
+      "restingHeartRate": 59,
+      "avgStress": 25,
+      "sleepScoreOverall": 64,
+      "sleepDurationSeconds": 22200,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-28",
+      "stepCount": 12246,
+      "restingHeartRate": 55,
+      "avgStress": 26,
+      "sleepScoreOverall": 78,
+      "sleepDurationSeconds": 24960,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-27",
+      "stepCount": 15195,
+      "restingHeartRate": 50,
+      "avgStress": 19,
+      "sleepScoreOverall": 85,
+      "sleepDurationSeconds": 25620,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-26",
+      "stepCount": 12042,
+      "restingHeartRate": 56,
+      "avgStress": 27,
+      "sleepScoreOverall": 89,
+      "sleepDurationSeconds": 26580,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-25",
+      "stepCount": 19367,
+      "restingHeartRate": 58,
+      "avgStress": 32,
+      "sleepScoreOverall": 82,
+      "sleepDurationSeconds": 24315,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-24",
+      "stepCount": 13046,
+      "restingHeartRate": 56,
+      "avgStress": 27,
+      "sleepScoreOverall": 87,
+      "sleepDurationSeconds": 26280,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-23",
+      "stepCount": 12469,
+      "restingHeartRate": 57,
+      "avgStress": 28,
+      "sleepScoreOverall": 80,
+      "sleepDurationSeconds": 23150,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-22",
+      "stepCount": 11837,
+      "restingHeartRate": 60,
+      "avgStress": 26,
+      "sleepScoreOverall": 63,
+      "sleepDurationSeconds": 19140,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-21",
+      "stepCount": 20347,
+      "restingHeartRate": 58,
+      "avgStress": 37,
+      "sleepScoreOverall": 71,
+      "sleepDurationSeconds": 22200,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-20",
+      "stepCount": 9496,
+      "restingHeartRate": 56,
+      "avgStress": 26,
+      "sleepScoreOverall": 90,
+      "sleepDurationSeconds": 27240,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-19",
+      "stepCount": 8899,
+      "restingHeartRate": 58,
+      "avgStress": 24,
+      "sleepScoreOverall": 81,
+      "sleepDurationSeconds": 25080,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
+    },
+    {
+      "date": "2026-02-18",
+      "stepCount": 11240,
+      "restingHeartRate": 63,
+      "avgStress": 29,
+      "sleepScoreOverall": 58,
+      "sleepDurationSeconds": 17340,
+      "bodyBatteryLow": null,
+      "bodyBatteryHigh": null
     }
   ]
 }
