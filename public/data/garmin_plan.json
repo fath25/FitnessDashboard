@@ -1,0 +1,63 @@
+{
+  "fetchedAt": "2026-04-18T07:12:54Z",
+  "planStart": "2026-04-14",
+  "planEnd": "2026-10-06",
+  "workouts": [
+    {
+      "date": "2026-04-18",
+      "sport": "brick",
+      "name": "Base",
+      "description": "1:48:00@155W\n52:00@5:55/km",
+      "durationMin": 160,
+      "distanceKm": null
+    },
+    {
+      "date": "2026-04-19",
+      "sport": "running",
+      "name": "Base",
+      "description": "5:55/km",
+      "durationMin": 55,
+      "distanceKm": 9.4
+    },
+    {
+      "date": "2026-04-20",
+      "sport": "running",
+      "name": "Recovery",
+      "description": "7:05/km",
+      "durationMin": 35,
+      "distanceKm": 5.02
+    },
+    {
+      "date": "2026-04-21",
+      "sport": "swimming",
+      "name": "Cruising 2",
+      "description": "",
+      "durationMin": 35,
+      "distanceKm": 1.1
+    },
+    {
+      "date": "2026-04-22",
+      "sport": "cycling",
+      "name": "Threshold",
+      "description": "3x6:00@255W",
+      "durationMin": 56,
+      "distanceKm": null
+    },
+    {
+      "date": "2026-04-23",
+      "sport": "swimming",
+      "name": "Two hundreds",
+      "description": "",
+      "durationMin": 35,
+      "distanceKm": 1.0
+    },
+    {
+      "date": "2026-04-24",
+      "sport": "running",
+      "name": "Recovery",
+      "description": "7:05/km",
+      "durationMin": 35,
+      "distanceKm": 5.02
+    }
+  ]
+}

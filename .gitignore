@@ -5,11 +5,15 @@ node_modules/
 # Build output
 dist/
 
-# Garmin session token — copy contents to GARMINTOKENS GitHub secret instead
+# Garmin / Google — local only, never commit
 scripts/.garmin_tokens.json
-
-# Sync state (local only)
 scripts/.garmin_sync_state.json
+scripts/.gcal_token.json
+scripts/.gcal_state.json
+scripts/credentials.json
+scripts/*.py
+scripts/requirements.txt
+scripts/__pycache__/
 
 # Environment
 .env
